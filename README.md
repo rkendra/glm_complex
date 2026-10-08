@@ -1,4 +1,4 @@
-# complex
+# glm_complex
 
 [![Package Version](https://img.shields.io/hexpm/v/complex)](https://hex.pm/packages/glm_complex)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://glm_complex.hexdocs.pm/)
@@ -8,7 +8,7 @@ gleam add glm_complex@1
 ```
 
 ```gleam
-import complex
+import glm_complex
 
 pub fn main() -> Nil {
   // TODO: An example of the project in use
