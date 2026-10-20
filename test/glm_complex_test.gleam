@@ -1,3 +1,4 @@
+import gleam/result
 import gleeunit
 import glm_complex as complex
 
@@ -27,4 +28,26 @@ pub fn powers_of_i_test() {
     == complex.Complex(-0.0, -1.0)
   assert complex.multiply(complex.multiply(complex.multiply(i, i), i), i)
     == complex.Complex(1.0, -0.0)
+}
+
+/// Test division of complex numbers
+pub fn divide_test() {
+  // Ensure that division properly inverts multiplication
+  let orig = complex.Complex(5.6, 4.2)
+  let multiplier = complex.Complex(2.4, 6.8)
+  let product = complex.multiply(orig, multiplier)
+  let quot =
+    complex.divide(product, multiplier)
+    |> result.unwrap(complex.Complex(0.0, 0.0))
+  assert quot == orig
+
+  // Cover edge case of real divisors
+  let real = complex.Complex(2.0, 0.0)
+  let quot =
+    complex.divide(orig, real)
+    |> result.unwrap(complex.Complex(0.0, 0.0))
+  assert quot == complex.Complex(2.8, 2.1)
+
+  // Ensure divison by zero errors
+  assert complex.divide(orig, complex.Complex(0.0, 0.0)) == Error(Nil)
 }

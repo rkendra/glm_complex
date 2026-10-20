@@ -30,11 +30,16 @@ pub fn subtract(lhs: Complex, rhs: Complex) -> Complex {
 
 /// Multiplies two complex numbers together
 pub fn multiply(lhs: Complex, by rhs: Complex) -> Complex {
-  let real1 = lhs.real *. rhs.real
-  let real2 = lhs.imag *. rhs.imag
-  let imag1 = lhs.real *. rhs.imag
-  let imag2 = lhs.imag *. rhs.real
-  Complex(real: real1 -. real2, imag: imag1 +. imag2)
+  case rhs {
+    Complex(_, 0.0) -> scale(lhs, rhs.real)
+    _ -> {
+      let real1 = lhs.real *. rhs.real
+      let real2 = lhs.imag *. rhs.imag
+      let imag1 = lhs.real *. rhs.imag
+      let imag2 = lhs.imag *. rhs.real
+      Complex(real: real1 -. real2, imag: imag1 +. imag2)
+    }
+  }
 }
 
 /// Returns divison of the inputs as a Result
@@ -44,11 +49,13 @@ pub fn divide(dividend: Complex, by divisor: Complex) -> Result(Complex, Nil) {
   case divisor {
     Complex(0.0, 0.0) -> Error(Nil)
     _ -> {
-      let numerator = multiply(dividend, conjugate(divisor))
-      // Avoid expensive multiplication if divisor has no imaginary component
-      let denominator = case divisor {
-        Complex(_, 0.0) -> divisor.real
-        _ -> multiply(divisor, conjugate(divisor)).real
+      // Avoid multiplication if divisor has no imaginary component
+      let #(numerator, denominator) = case divisor {
+        Complex(_, 0.0) -> #(dividend, divisor.real)
+        _ -> #(
+          multiply(dividend, conjugate(divisor)),
+          multiply(divisor, conjugate(divisor)).real,
+        )
       }
 
       Ok(Complex(numerator.real /. denominator, numerator.imag /. denominator))
@@ -56,12 +63,28 @@ pub fn divide(dividend: Complex, by divisor: Complex) -> Result(Complex, Nil) {
   }
 }
 
-/// Returns the square root of the input as a Complex
+/// Returns the principal square root of the input as a Complex
+/// using the formula as described [here](https://en.wikipedia.org/wiki/Square_root#Algebraic_formula)
 ///
 /// Unlike int.square_root and float.square_root, this function
 /// is infalliable as complex numbers are algebraically closed
 pub fn square_root(num: Complex) -> Complex {
-  todo
+  let abs = absolute_value(num)
+  let real =
+    float.add(abs, num.real)
+    |> float.multiply(0.5)
+    |> float.square_root()
+    |> result.unwrap(0.0)
+  let imag =
+    float.subtract(abs, num.real)
+    |> float.multiply(0.5)
+    |> float.square_root()
+    |> result.unwrap(0.0)
+  let imag_sign = case num.imag <. 0.0 {
+    True -> -1.0
+    False -> 1.0
+  }
+  Complex(real, imag *. imag_sign)
 }
 
 pub fn absolute_value(num: Complex) -> Float {
@@ -99,6 +122,8 @@ pub fn negate(num: Complex) -> Complex {
   Complex(num.real *. -1.0, num.imag *. -1.0)
 }
 
+/// Returns the polar representation of a complex number in the form
+/// (magnitude, theta)
 pub fn to_polar(num: Complex) -> #(Float, Float) {
   let magnitude = absolute_value(num)
   let normalized =
@@ -113,4 +138,15 @@ pub fn to_polar(num: Complex) -> #(Float, Float) {
 pub fn from_polar(magnitude: Float, theta: Float) -> Complex {
   let euler_result = Complex(maths.cos(theta), maths.sin(theta))
   Complex(euler_result.real *. magnitude, euler_result.imag *. magnitude)
+}
+
+/// Returns e (Euler's number) raised to the power of the given exponent, as a Complex
+pub fn exponential(num: Complex) -> Complex {
+  let euler_result = Complex(maths.cos(num.imag), maths.sin(num.imag))
+  let real_exp = float.exponential(num.real)
+  scale(euler_result, real_exp)
+}
+
+fn scale(c: Complex, scalar: Float) {
+  Complex(c.real *. scalar, c.imag *. scalar)
 }
